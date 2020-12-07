@@ -1,4 +1,7 @@
 import itertools
+import networkx as nx
+import matplotlib.pyplot as plt
+import numpy as np
 
 def factorial(n): # positive integers only n>=0
     fact = 1
@@ -7,7 +10,8 @@ def factorial(n): # positive integers only n>=0
     return fact
 
 # Python function is_proper(g,c) passes two parameters, a graph in the form of a
-# dictionary (g) and a colo# dictionary (g) and a coloring of this graphs vertices, also in the form of aring of this graphs vertices, also in the form of a
+# dictionary (g) and a colo# dictionary (g) and a coloring of this graphs vertices,
+# also in the form of aring of this graphs vertices, also in the form of a
 # dictionary (c). This function transcribes the LETTERS of the given
 # graph into their corresponding COLORS/NUMBERS using a nested FOR loop. One
 # for accessing each individual vertex-string (keys) and the adjacent-list of
@@ -73,7 +77,6 @@ def is_proper(g, c):
 # an empty dictionary.
 
 def greedy(g, o):
-    c = {}
     c = dict.fromkeys(o)
     first = True
 
@@ -102,28 +105,44 @@ def greedy(g, o):
         return {}
 
 
+# Brute-force greediest coloring finder
 
-# properGraph = {"A": ["B", "C"], "B": ["A", "C"], "C": ["A", "B"]}
-#
-# greedyGraph1 = {"A": ["B", "C"], "B": ["A"], "C": ["A"]}
-# greedyGraph2 = {"A": ["B"], "B": ["A", "C","D"], "C": ["B", "D"], "D": ["C","B"]}
-greedyGraph3 = {"A": ["B", "E"], "B": ["A", "C", "E"], "C": ["B", "D", "E"], "D": ["C"], "E" : ["A", "B", "C"]}
+NODES = 9 # number of nodes
+P = 0.5 # probability for edge creation
 
-# properColor1 = {"A": 1, "B": 2, "C": 3}
-# properColor2 = {"A": 1, "B": 1, "C": 2}
+gen_nodes = [n for n in range(NODES)]
+G = nx.erdos_renyi_graph(NODES,P) # random graph generator
+gen_graph = nx.to_dict_of_lists(G)
 
-# greedyOrder1 = ["A", "B", "C"]
-# greedyOrder2 = ["A","B", "C", "D"]
-greedyOrder3 = ["A", "D", "B", "E", "C"]
+permutations = list(itertools.permutations(gen_nodes))
 
-# print(is_proper(properGraph,properColor1))
-# print(greedy(greedyGraph2, greedyOrder2))
-permutations = list(itertools.permutations(greedyOrder3))
+coloring = []
+chromatic_num = []
+order = []
+greediest = []
 
-for order in permutations:
-    coloring = greedy(greedyGraph3,order)
-    chromatic_num = coloring[max(coloring,key=coloring.get)]
-    print(chromatic_num, coloring, order)
-# for list in results:
-#     chromatic_numbers = max(list, key=list.get)
+for p in permutations:
+    coloring.append(greedy(gen_graph,p))
+    chromatic_num.append(max(coloring[-1].values())) # find "largest" color with ordering, -1 = last element
+    order.append(p)
 
+greediest.append(min(chromatic_num))
+if chromatic_num.count(greediest[-1]) > 1:
+    for i in [i for i, j in enumerate(chromatic_num) if j == min(chromatic_num)]:
+        greediest.append(i)
+
+pos = nx.random_layout(G) #organizes graph better
+color_map = [coloring[0].get(node, 0.25) for node in G.nodes()]
+nx.draw(G, cmap=plt.get_cmap('hsv'), node_color=color_map, with_labels=True, font_color='white')
+
+# adds padding to prevent node clipping
+ax = plt.gca()
+ax.margins(0.20)
+
+plt.savefig("optimal_vertex_coloring-4.png") # save as png
+plt.show()
+
+for g in greediest:
+    print(chromatic_num[g], order[g], coloring[g])
+
+print(chromatic_num[0], order[0], coloring[0])
